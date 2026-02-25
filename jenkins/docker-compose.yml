@@ -1,0 +1,68 @@
+services:
+  jenkins:
+    # WHAT: build a custom image from the local Dockerfile
+    # WHY:  adds Docker CLI and kubectl on top of the official Jenkins image
+    #       so the container is fully self-contained and reproducible
+    build: .
+
+    # WHAT: name the container so we can reference it easily
+    # WHY:  allows `docker exec -it jenkins bash` without looking up container ID
+    container_name: jenkins
+
+    # WHAT: always restart the container if it stops
+    # WHY:  survives Docker daemon restarts and WSL reboots
+    restart: unless-stopped
+
+    # WHAT: expose Jenkins UI and agent communication ports
+    # WHY:  8080 is the web UI, 50000 is for connecting build agents later
+    # ANALOGY: like opening ports in an AWS Security Group inbound rule
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+
+    environment:
+      # WHAT: tell kubectl where to find the kubeconfig file
+      # WHY:  Jenkins runs as root (HOME=/root) but we store the kubeconfig
+      #       in a host-mounted path so it survives container recreation
+      - KUBECONFIG=/root/.kube/jenkins-kubeconfig
+
+    volumes:
+      # WHAT: persist Jenkins home directory on the host
+      # WHY:  jobs, plugins, and config survive container restarts
+      # ANALOGY: like an EBS volume attached to an EC2 instance
+      - jenkins_home:/var/jenkins_home
+
+      # WHAT: mount the Docker socket from the host into Jenkins
+      # WHY:  allows Jenkins to run `docker build` commands using the host Docker daemon
+      # ANALOGY: giving Jenkins a "remote control" for Docker on your machine
+      - /var/run/docker.sock:/var/run/docker.sock
+
+      # WHAT: mount the Minikube kubeconfig from the host into the container
+      # WHY:  makes the kubeconfig persistent across container recreations
+      #       regenerate this file with: kubectl config view --minify --flatten --context=minikube
+      #       | sed 's|127.0.0.1:[0-9]*|192.168.49.2:8443|' > ~/.kube/jenkins-kubeconfig
+      - ${JENKINS_KUBECONFIG_PATH}:/root/.kube/jenkins-kubeconfig:ro
+
+    # WHAT: run container as root
+    # WHY:  required to access the Docker socket at /var/run/docker.sock
+    user: root
+
+    networks:
+      # WHAT: connect Jenkins to its default network and to the minikube network
+      # WHY:  the minikube cluster runs inside a Docker container on the "minikube" network
+      #       Jenkins needs to be on that same network to reach the Kubernetes API server
+      - default
+      - minikube
+
+networks:
+  # WHAT: reference the minikube network created externally by `minikube start`
+  # WHY:  we don't manage this network — Minikube owns it.
+  #       declaring it as external tells Docker Compose "this already exists, don't create it"
+  # IMPORTANT: Minikube must be started BEFORE running `docker compose up`
+  minikube:
+    external: true
+
+volumes:
+  # WHAT: named volume managed by Docker
+  # WHY:  data persists even if the container is deleted
+  jenkins_home:
