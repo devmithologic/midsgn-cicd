@@ -1,0 +1,29 @@
+# ─── Environment & secrets ────────────────────────────────────────────────────
+jenkins/.env
+*.env
+*.env.local
+
+# ─── Kubernetes & kubeconfig ──────────────────────────────────────────────────
+kubeconfig
+kubeconfig.yaml
+*.kubeconfig
+*-kubeconfig
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+.docker/
+
+# ─── Jenkins ──────────────────────────────────────────────────────────────────
+# Local Jenkins home if ever bind-mounted directly
+jenkins_home/
+
+# ─── OS & editor noise ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
