@@ -1,0 +1,22 @@
+# WHAT: Service that exposes the FastAPI backend inside the cluster
+# WHY:  pods have dynamic IPs that change on every restart;
+#       a Service provides a stable DNS name and load balances across replicas
+# ANALOGY: like an internal AWS ALB — routes traffic to healthy pods
+#          other pods reach the backend at http://backend:8000
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: crea3d
+spec:
+  # WHAT: ClusterIP makes the service reachable only inside the cluster
+  # WHY:  the backend should not be exposed to the outside world directly;
+  #       only the frontend (and eventually an ingress) should talk to it
+  type: ClusterIP
+  selector:
+    # WHAT: route traffic to pods with this label
+    # WHY:  this must match the labels defined in the Deployment template
+    app: backend
+  ports:
+    - port: 8000
+      targetPort: 8000

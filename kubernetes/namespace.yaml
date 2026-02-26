@@ -1,0 +1,8 @@
+# WHAT: isolated namespace for the 3D print application
+# WHY:  keeps app resources separate from Kubernetes system pods
+#       allows applying resource quotas and network policies per environment
+# ANALOGY: like a dedicated VPC or a separate Docker Compose project
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crea3d

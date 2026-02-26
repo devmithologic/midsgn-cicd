@@ -1,0 +1,52 @@
+# WHAT: StatefulSet for MongoDB
+# WHY:  databases need stable identity and persistent storage across restarts
+#       StatefulSet (vs Deployment) guarantees the pod always reconnects
+#       to the same PersistentVolume, preserving data on restarts
+# ANALOGY: like an EC2 instance with an EBS volume — the disk stays
+#          attached even if the instance is stopped and restarted
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: crea3d
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7.0
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: "crea3d"
+          volumeMounts:
+            # WHAT: mount the persistent volume at MongoDB's data directory
+            # WHY:  all MongoDB data is stored here — mounting a PV here
+            #       ensures data survives pod restarts and rescheduling
+            - name: mongodb-data
+              mountPath: /data/db
+
+  # WHAT: PersistentVolumeClaim template — automatically creates a PVC per replica
+  # WHY:  StatefulSets manage their own storage; each replica gets its own volume
+  #       Minikube's default StorageClass provisions the volume automatically
+  # ANALOGY: like requesting an EBS volume — you specify the size,
+  #          the cluster provisions it from available storage
+  volumeClaimTemplates:
+    - metadata:
+        name: mongodb-data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

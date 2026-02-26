@@ -1,0 +1,24 @@
+# WHAT: Deployment for the React frontend (served by nginx)
+# WHY:  manages the frontend pod lifecycle and enables rolling updates
+# ANALOGY: like an Auto Scaling Group serving a static website via nginx
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: crea3d
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: crea3d-frontend:test
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80

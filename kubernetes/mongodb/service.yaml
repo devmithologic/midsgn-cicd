@@ -1,0 +1,17 @@
+# WHAT: ClusterIP Service that exposes MongoDB inside the cluster
+# WHY:  other pods (backend) reach MongoDB at mongodb:27017
+#       the DNS name "mongodb" matches the service name below
+# ANALOGY: like an internal load balancer — stable hostname regardless
+#          of which pod IP is currently assigned
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: crea3d
+spec:
+  type: ClusterIP
+  selector:
+    app: mongodb
+  ports:
+    - port: 27017
+      targetPort: 27017

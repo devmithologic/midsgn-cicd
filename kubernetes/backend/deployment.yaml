@@ -1,0 +1,43 @@
+# WHAT: Deployment for the FastAPI backend
+# WHY:  a Deployment manages pod lifecycle — if a pod crashes,
+#       Kubernetes automatically restarts it
+# ANALOGY: like an Auto Scaling Group in AWS that keeps N instances running
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: crea3d
+spec:
+  # WHAT: number of pod replicas to run
+  # WHY:  1 replica is enough for local development
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          image: crea3d-backend:test
+
+          # WHAT: never pull from a remote registry
+          # WHY:  the image was loaded locally with `minikube image load`
+          #       in the Jenkins pipeline this will change to IfNotPresent
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 8000
+
+          # WHAT: environment variables passed to the container
+          # WHY:  the backend needs to know where MongoDB is
+          #       in Kubernetes, services are reachable by their name
+          #       so "mongodb" resolves to the MongoDB service in the same namespace
+          # ANALOGY: like Docker Compose service name resolution
+          env:
+            - name: MONGODB_URL
+              value: "mongodb://mongodb:27017"
+            - name: DATABASE_NAME
+              value: "crea3d"
